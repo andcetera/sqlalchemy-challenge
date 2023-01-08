@@ -36,6 +36,12 @@ def twelve_mo()->dt.date:
 
     return year_ago
 
+# Define function to check if user entered dates are usable
+def validate(date):
+    try:
+        dt.datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError('Incorrect date format, should be YYYY-mm-dd')
 
 
 # Flask Setup
@@ -134,6 +140,8 @@ def start_date(start):
     # Print request info to terminal for tracking
     print("Server received request for 'Start Date' search...")
 
+    validate(start)
+
     # Create new session link
     session = Session(engine)
 
@@ -153,6 +161,9 @@ def daterange(start, end):
 
     # Print request info to terminal for tracking
     print("Server received request for 'Date Range' search...")
+
+    validate(start)
+    validate(end)
 
     # Create new session link
     session = Session(engine)
