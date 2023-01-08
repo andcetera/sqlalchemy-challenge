@@ -19,16 +19,10 @@ Station = Base.classes.station
 
 
 # Define function to get annual data
-def twelve_mo()->dt.date:
-
-    # Create new session link
-    session = Session(engine)
+def twelve_mo(session:Session)->dt.date:
 
     # Get the most recent date in the Measurement table
     most_recent = session.query(Measurement.date).order_by(Measurement.date.desc()).first().date
-
-    # Close session once query is complete
-    session.close()
 
     # Calculate the date one year from the last date in dataset
     last = dt.datetime.strptime(most_recent, "%Y-%m-%d").date()
@@ -36,10 +30,15 @@ def twelve_mo()->dt.date:
 
     return year_ago
 
+
 # Define function to check if user entered dates are usable
-def validate(date):
+def validate(date:str)->None:
+
+    # Convert user input to datetime to see if it fits our required format
     try:
         dt.datetime.strptime(date, '%Y-%m-%d')
+
+    # If not, return a descriptive error go let user know what to do
     except ValueError:
         raise ValueError('Incorrect date format, should be YYYY-mm-dd')
 
@@ -57,14 +56,14 @@ def home():
     print("Server received request for 'Home' page...")
 
     # List all available routes
-    return """  AVAILABLE ROUTES:
-                /api/v1.0/precipitation (annual measurment data) -- 
-                /api/v1.0/stations (station name list) -- 
-                /api/v1.0/tobs (temperature observations) -- 
-                FOR QUERIES BY DATE:
-                /api/v1.0/*start-date (YYYY-mm-dd) -- 
-                /api/v1.0/*start-date/*end-date (YYYY-mm-dd)
-                """
+    return jsonify(['AVAILABLE ROUTES', 
+    {'Annual Precipitation Data': '/api/v1.0/precipitation'}, 
+    {'Station Name List': '/api/v1.0/stations'}, 
+    {'Temperature Observations': '/api/v1.0/tobs'}, 
+    'FOR TEMPERATURE QUERIES BY DATE', {'Minimum, Average, Maximum': '*** YYYY-MM-DD FORMAT ONLY ***'}, 
+    {'Results from start-date until end of dataset:': '/api/v1.0/*start-date'}, 
+    {'Results from start-date thru end-date:': '/api/v1.0/*start-date/*end-date'}])
+
 
 @app.route("/api/v1.0/precipitation")
 def precip():
@@ -76,7 +75,7 @@ def precip():
     session = Session(engine)
 
     # Perform a query to retrieve the date and precipitation measures
-    data = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= twelve_mo())
+    data = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= twelve_mo(session))
 
     # Close session once query is complete
     session.close()
@@ -86,6 +85,7 @@ def precip():
 
     # Return the JSON representation of our dictionary
     return jsonify(prcp)
+
 
 @app.route("/api/v1.0/stations")
 def stns():
@@ -108,6 +108,7 @@ def stns():
     # Return a JSON list of stations from the dataset
     return jsonify(stations)
 
+
 @app.route("/api/v1.0/tobs")
 def tobs():
 
@@ -123,7 +124,7 @@ def tobs():
 
     # Query the dates and temperature observations of the most active station for the previous year of data
     station_info = session.query(Measurement.date, Measurement.tobs)\
-        .filter(Measurement.station == most_active.station).filter(Measurement.date >= twelve_mo())
+        .filter(Measurement.station == most_active.station).filter(Measurement.date >= twelve_mo(session))
 
     # Close session once queries are complete
     session.close()
@@ -133,6 +134,7 @@ def tobs():
 
     # Return a JSON list of temperature observations (TOBS) for the previous year
     return jsonify(tobs)
+
 
 @app.route("/api/v1.0/<start>")
 def start_date(start):
@@ -155,6 +157,7 @@ def start_date(start):
 
     # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range
     return jsonify({'min':lowest, 'avg':round(average, 1), 'max':highest})
+
 
 @app.route("/api/v1.0/<start>/<end>")
 def daterange(start, end):
