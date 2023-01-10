@@ -2,7 +2,7 @@
 # Import Dependencies
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, func, desc
+from sqlalchemy import create_engine, func
 import datetime as dt
 from flask import Flask, jsonify
 
@@ -40,7 +40,7 @@ def validate(date:str)->None:
 
     # If not, return a descriptive error go let user know what to do
     except ValueError:
-        raise ValueError('Incorrect date format, should be YYYY-mm-dd')
+        raise ValueError('Incorrect date format, should be YYYY-MM-DD')
 
 
 # Flask Setup
@@ -57,12 +57,12 @@ def home():
 
     # List all available routes
     return jsonify(['AVAILABLE ROUTES', 
-    {'Annual Precipitation Data': '/api/v1.0/precipitation'}, 
+    {'Annual Precipitation Data (All Stations)': '/api/v1.0/precipitation'}, 
     {'Station Name List': '/api/v1.0/stations'}, 
-    {'Temperature Observations': '/api/v1.0/tobs'}, 
-    'FOR TEMPERATURE QUERIES BY DATE', {'Minimum, Average, Maximum': '*** YYYY-MM-DD FORMAT ONLY ***'}, 
-    {'Results from start-date until end of dataset:': '/api/v1.0/*start-date'}, 
-    {'Results from start-date thru end-date:': '/api/v1.0/*start-date/*end-date'}])
+    {'Temperature Observations (Most Active Station)': '/api/v1.0/tobs'}, 
+    'FOR TEMPERATURE QUERIES BY DATE', {'Returns: Min, Avg, Max': '*** YYYY-MM-DD FORMAT ONLY ***'}, 
+    {'Results from start-date until end of dataset:': '/api/v1.0/<start-date>'}, 
+    {'Results from start-date thru end-date:': '/api/v1.0/<start-date>/<end-date>'}])
 
 
 @app.route("/api/v1.0/precipitation")
@@ -119,8 +119,8 @@ def tobs():
     session = Session(engine)
 
     # Get info for the most active station
-    most_active = session.query(func.count(Measurement.station).label('count'), Measurement.station)\
-        .group_by(Measurement.station).order_by(desc('count')).first()
+    most_active = session.query(func.count(Measurement.station), Measurement.station)\
+        .group_by(Measurement.station).order_by(func.count(Measurement.station).desc()).first()
 
     # Query the dates and temperature observations of the most active station for the previous year of data
     station_info = session.query(Measurement.date, Measurement.tobs)\
@@ -148,15 +148,14 @@ def start_date(start):
     session = Session(engine)
 
     # When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than or equal to the start date
-    lowest, = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start).one()
-    average, = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start).one()
-    highest, = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start).one()
+    temps = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+    .filter(Measurement.date >= start).all()
 
     # Close session once queries are complete
     session.close()
 
     # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range
-    return jsonify({'min':lowest, 'avg':round(average, 1), 'max':highest})
+    return jsonify({'min': temps[0][0], 'avg': round(temps[0][1], 1), 'max': temps[0][2]})
 
 
 @app.route("/api/v1.0/<start>/<end>")
@@ -172,16 +171,14 @@ def daterange(start, end):
     session = Session(engine)
 
     # When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates from the start date through the end date (inclusive)
-    lowest, = session.query(func.min(Measurement.tobs)).filter(Measurement.date >= start).filter(Measurement.date <= end).one()
-    average, = session.query(func.avg(Measurement.tobs)).filter(Measurement.date >= start).filter(Measurement.date <= end).one()
-    highest, = session.query(func.max(Measurement.tobs)).filter(Measurement.date >= start).filter(Measurement.date <= end).one()
+    temps = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+    .filter(Measurement.date >= start).filter(Measurement.date <= end).all()
 
     # Close session once queries are complete
     session.close()
 
     # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range
-    return jsonify({'min':lowest, 'avg':round(average, 1), 'max':highest})
-
+    return jsonify({'min': temps[0][0], 'avg': round(temps[0][1], 1), 'max': temps[0][2]})
 
 # Run the code when the app name is called in the terminal
 if __name__ == "__main__":
