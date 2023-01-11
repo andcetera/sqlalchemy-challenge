@@ -4,12 +4,12 @@ Using SQLAlchemy ORM queries, Pandas, and Matplotlib to perform basic climate an
 ![surfs-up.png](Images/surfs-up.png)
 - - -
 ## Project Structure:
-### All project code can be found in the [Project_Files](https://github.com/andcetera/sqlalchemy-challenge/tree/main/Project_Files) folder:  
-**Part 1:** Climate Analysis and Exploration: [climate_info.ipynb](https://github.com/andcetera/sqlalchemy-challenge/blob/main/Project_Files/climate_info.ipynb)  
-**Part 2:** Design Your Climate App: [app.py](https://github.com/andcetera/sqlalchemy-challenge/blob/main/Project_Files/app.py)  
+### All project code can be found in the [Project_Files](Project_Files/) folder:  
+**Part 1:** Climate Analysis and Exploration: [climate_info.ipynb](Project_Files/climate_info.ipynb)  
+**Part 2:** Design Your Climate App: [app.py](Project_Files/app.py)  
 ### **Bonus: Other Recommended Analyses** 
-**Temperature Analysis Part 1:** [bonus_temp_analysis_1.ipynb](https://github.com/andcetera/sqlalchemy-challenge/blob/main/Project_Files/bonus_temp_analysis_1.ipynb)  
-**Temperature Analysis Part 2:** [bonus_temp_analysis_2.ipynb](https://github.com/andcetera/sqlalchemy-challenge/blob/main/Project_Files/bonus_temp_analysis_2.ipynb)
+**Temperature Analysis Part 1:** [bonus_temp_analysis_1.ipynb](Project_Files/bonus_temp_analysis_1.ipynb)  
+**Temperature Analysis Part 2:** [bonus_temp_analysis_2.ipynb](Project_Files/bonus_temp_analysis_2.ipynb)
 
 The Resources folder contains the original sqlite and csv files used for the project, & Images folder contains images used for this README file.
 
